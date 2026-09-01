@@ -6,7 +6,7 @@ from app.config import settings # essa biblioteca aqui vai importar o dicionario
 
 
 app = FastAPI(
-    title = "COFRE DIGITAL - SETOR: RECURSOS HUMANOS", discription = "Gerenciamento de documentos do setor de recursos humanos"
+    title = "COFRE DIGITAL - SETOR: RECURSOS HUMANOS", description = "Gerenciamento de documentos do setor de recursos humanos"
 
 )
 
@@ -19,18 +19,23 @@ METADATA_DIR = Path(settings["storage"]["diretorio_metadata"])
 METADATA_FILE = METADATA_DIR /'documentos.json'
 
 
-def ler_metadados() -> list[dict]:
+def ler_metadados() -> list[dict]: #aqui ele infica que  a funcao sempre vai retornar uma lista de dicionarios, onde cada dicionario representa um documento
     if not METADATA_FILE.exists():
-        return []
+        return [] #aqui antes de abrir o arquivo ele chega se realmente ele existe, se o arquivi não tiver sido criado ele retorna uma lista vazia ao invez de inrerromper a execução com um erro
 
     with open(METADATA_FILE, "r", encoding="utf-8") as file:
         try:
-            return json.load(file)
-        except json.JSONDecodeError: 
-            return []
+            conteudo = file.read().strip()
+            if not conteudo:
+                return []
 
+            return json.loads(conteudo)
+        except json.JSONDecodeError:
+            return []
+        
+            
 
 @app.get("/")
-def root():
-    return{"test:" "funcionou"}
+def test():
+    return{"test": "funcionou"}
         
