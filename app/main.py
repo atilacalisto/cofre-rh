@@ -1,41 +1,69 @@
-#somente coloque as bibliotecas, não remova nenhuma dessas 
 import json
-from  pathlib import Path 
+from pathlib import Path
 from fastapi import FastAPI, HTTPException
-from app.config import settings # essa biblioteca aqui vai importar o dicionario com as congig do config.yaml (r12)
+from app.config import settings
+from app.models import Documento
 
 
 app = FastAPI(
-    title = "COFRE DIGITAL - SETOR: RECURSOS HUMANOS", description = "Gerenciamento de documentos do setor de recursos humanos"
-
+    title="COFRE DIGITAL - SETOR RH", description="Gerenciamento de documentos do setor de recursos humanos"
 )
 
-
-#aqui ele vai extrair o caminho da pasta de metadados diretamente da config externa 
-METADATA_DIR = Path(settings["storage"]["diretorio_metadata"])
-
-
-#aqui ele vai definir o caminho completo apontado para o arquivo 'documentos.json'
-METADATA_FILE = METADATA_DIR /'documentos.json'
+DIRETORIO_METADADOS = Path(settings["storage"]["diretorio_metadata"])
+ARQUIVO_METADADOS = DIRETORIO_METADADOS / "documentos.json"
 
 
-def ler_metadados() -> list[dict]: #aqui ele infica que  a funcao sempre vai retornar uma lista de dicionarios, onde cada dicionario representa um documento
-    if not METADATA_FILE.exists():
-        return [] #aqui antes de abrir o arquivo ele chega se realmente ele existe, se o arquivi não tiver sido criado ele retorna uma lista vazia ao invez de inrerromper a execução com um erro
+def ler_metadados() -> list[dict]:
+    if not ARQUIVO_METADADOS.exists():
+        return[]
 
-    with open(METADATA_FILE, "r", encoding="utf-8") as file:
-        try:
-            conteudo = file.read().strip()
-            if not conteudo:
-                return []
-
-            return json.loads(conteudo)
+    with open(ARQUIVO_METADADOS, "r", encoding="utf-8") as arquivo: 
+        try: 
+            return json.load(arquivo)
         except json.JSONDecodeError:
             return []
-        
-            
 
-@app.get("/")
-def test():
-    return{"test": "funcionou"}
-        
+def salvar_metadados(dados: list[dict]) -> None: 
+    #aqui ele vai garantor a exitencia do diretorio 
+    DIRETORIO_METADADOS.mkdir(parents=True, exist_ok=True)
+    with open(ARQUIVO_METADADOS, "w", encoding="utf-8") as arquivo:
+        json.dump(dados, arquivo, indent=4 , ensure_ascii=False)
+
+
+
+# --- REQUISITO F1: Cadastrar Metadados do Documento ---
+@app.post("/documentos", response_model=Documento, status_code=201)
+def criar_documento(documento: Documento):
+    """Cadastra os metadados de um novo documento no arquivo de persistência."""
+    documentos = ler_metadados()
+
+    for item in documentos:
+        if item.get("id") == documento.id:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Já existe um documento cadastrado com o ID {documento.id}."
+            )
+
+    # mode="json" converte datas (datetime/date) em textos formatados no padrão ISO
+    novo_documento = documento.model_dump(mode="json")
+    documentos.append(novo_documento)
+    salvar_metadados(documentos)
+
+    return documento
+
+#requisito 2 - listar os documentos 
+@app.get("/documentos", response_model=list[Documento])
+def listar_documentos():
+    return ler_metadados() 
+
+
+#pt para buscar o arquivo por id
+@app.get("/documento/{id}", response_model=Documento)
+def buscar_documento_porID(id:int):
+    documentos = ler_metadados()
+
+    for documento in documentos: 
+        if documento.get("id") == id: 
+            return documento
+
+    raise HTTPException(status_code=404, detail="Documento não encontrado")
