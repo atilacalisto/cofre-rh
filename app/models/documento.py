@@ -3,7 +3,6 @@ from enum import Enum
 from pydantic import BaseModel, Field
 
 
-# Padronização dos tipos de documento de RH - assim eu nao preciso colocar dados misturados (como atestado e contrato na mesma base, fica melhoe pra organizae)
 class TipoDocumentoEnum(str, Enum):
     ATESTADO = "Atestado"
     HOLERITE = "Holerite"

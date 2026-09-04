@@ -1,3 +1,6 @@
+version: 1.0.0
+
+
 storage:
   diretorio_documentos: "./storage/documentos"
   diretorio_metadata: "./storage/metadata"
