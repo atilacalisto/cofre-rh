@@ -1,4 +1,4 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, HTTPException, status
 from app.models.documento import Documento
 from app.services.documento_servico import (
     listar_documentos_servico,
