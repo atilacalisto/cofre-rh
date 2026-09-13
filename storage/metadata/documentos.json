@@ -28,5 +28,20 @@
         "setor": "Recursos Humanos",
         "tipo_de_documento": "Atestado",
         "competencia_m_a": "09/2026"
+    },
+    {
+        "id": 3,
+        "nome_original": "Bruno Rosto 1.png",
+        "nome_armazenado": "3_Bruno Rosto 1.png",
+        "extensao": "png",
+        "tipo_mime": "image/png",
+        "tamanho": 224153,
+        "descricao": "foto",
+        "data_upload": "2026-09-13T19:52:17.352839Z",
+        "sha256": "51bd1348037e0b9f50b07a7f1473b401a942dbfd79446a16479a8a5c6ba106f5",
+        "funcionario": "Pedro",
+        "setor": "Programação",
+        "tipo_de_documento": "Outro",
+        "competencia_m_a": "09/2026"
     }
 ]
