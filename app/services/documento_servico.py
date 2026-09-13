@@ -91,10 +91,10 @@ async def criar_documento_servico(
             detail="Erro ao armazenar o arquivo fisicamente."
         )
 
-    # 5. Identificar extensão
+    #Identificar extensão
     extensao = Path(nome_original).suffix.replace(".", "").lower()
 
-    # 6. Identificar tipo MIME
+    #Identificar tipo MIME
     tipo_mime = arquivo.content_type or "application/octet-stream"
 
     #Calcular hash SHA-256
