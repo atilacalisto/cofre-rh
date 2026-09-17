@@ -1,5 +1,5 @@
 """
-Carrega o arquivo de configuração externo (config.yaml) e disponibiliza
+Carrega o arquivo de configuração externo (config/config.yaml) e disponibiliza
 seus valores para o resto da aplicação (F12 — Arquivo de Configuração).
 
 Uso em outros módulos:
@@ -10,7 +10,7 @@ Uso em outros módulos:
 from pathlib import Path
 import yaml
 
-CONFIG_PATH = Path(__file__).resolve().parent.parent / "config.yaml"
+CONFIG_PATH = Path(__file__).resolve().parent.parent / "config" / "config.yaml"
 
 
 def carregar_configuracao(caminho: Path = CONFIG_PATH) -> dict:
