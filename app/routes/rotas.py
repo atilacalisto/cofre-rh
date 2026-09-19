@@ -1,6 +1,6 @@
 from fastapi import APIRouter, HTTPException, status, UploadFile, File, Form
 from app.models.documento import Documento, TipoDocumentoEnum
-from app.services.documento_servico import (
+from app.services.servico import (
     listar_documentos_servico,
     buscar_documento_por_id_servico,
     criar_documento_servico,
