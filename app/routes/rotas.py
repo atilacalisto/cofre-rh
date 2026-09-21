@@ -2,7 +2,7 @@ from fastapi import APIRouter, HTTPException, status, UploadFile, File, Form
 from app.models.documento import Documento, TipoDocumentoEnum
 from app.services.servico import (
     listar_documentos_servico,
-    buscar_documento_por_id_servico,
+    buscar_documento_por_id as buscar_documento_por_id_servico,
     criar_documento_servico,
 )
 
@@ -33,6 +33,6 @@ def listar_documentos():
     return listar_documentos_servico()
 
 
-@router.get("/{id}", response_model=Documento)
-def buscar_documento_por_id(id: int):
-    return buscar_documento_por_id_servico(id)
+@router.get("/{documento_id}", response_model=Documento)
+def buscar_documento_por_id(documento_id: int):
+    return buscar_documento_por_id_servico(documento_id)

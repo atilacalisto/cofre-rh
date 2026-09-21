@@ -40,7 +40,7 @@ def listar_documentos_servico() -> list[dict]:
     return ler_metadados()
 
 
-def buscar_documento_por_id_servico(identificador: int) -> dict:
+def buscar_documento_por_id(identificador: int) -> dict:
     documentos = ler_metadados()
     for documento in documentos:
         if documento.get("id") == identificador:
