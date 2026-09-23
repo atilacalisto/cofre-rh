@@ -1,5 +1,7 @@
 import json
 import hashlib
+import zipfile 
+import io
 from pathlib import Path
 from datetime import datetime, timezone
 from fastapi import HTTPException, status, UploadFile
@@ -123,3 +125,63 @@ async def criar_documento_servico(
     logger.info("Documento cadastrado: id=%s, nome_original=%s, tamanho=%s bytes", novo_id, nome_original, tamanho_bytes)
 
     return novo_documento.model_dump(mode="json")
+
+
+def obter_caminho_arquivo(identificador: int) -> dict:
+    documento = buscar_documento_por_id(identificador)
+
+    caminho_arquivo = DIRETORIO_DOCUMENTOS / documento["nome_armazenado"]
+
+    if not caminho_arquivo.exists():
+        logger.error("Arquivo não está no storage: %s", caminho_arquivo)
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="O arquivo não foi encontrado")
+
+    logger.info("Download: id=%s, nome_origial=%s", identificador, documento["nome_original"])
+
+
+    return {
+        "caminho": caminho_arquivo,
+        "nome_original": documento["nome_original"],
+        "tipo_mime": documento["tipo_mime"]
+    }
+         
+
+def gerar_zip_funcionario(funcionario: str) -> io.BytesIO:
+    documentos = listar_documentos_servico()
+    documentos_funcionario = [
+        documento
+        for documento in documentos
+        if documento["funcionario"].strip().casefold() == funcionario.strip().casefold()
+    ]
+
+    if not documentos_funcionario:
+        logger.warning("Nenhum documento encontrado para o funcionário: %s", funcionario)
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Nenhum documento encontrado para esse funcionário."
+        )
+
+    buffer_zip = io.BytesIO()
+    arquivos_adicionados = 0
+
+    with zipfile.ZipFile(buffer_zip, "w", zipfile.ZIP_DEFLATED) as zipf:
+        for doc in documentos_funcionario:
+            caminho_arquivo = DIRETORIO_DOCUMENTOS / doc["nome_armazenado"]
+            if caminho_arquivo.exists():
+                nome_no_zip = f'{doc["id"]}_{doc["nome_original"]}'
+                zipf.write(caminho_arquivo, arcname=nome_no_zip)
+                arquivos_adicionados += 1
+            else:
+                logger.warning("Arquivo físico ausente ao gerar ZIP: %s", caminho_arquivo)
+
+    if arquivos_adicionados == 0:
+        logger.error("Nenhum arquivo físico encontrado para gerar ZIP do funcionário: %s", funcionario)
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Os documentos desse funcionário não foram encontrados no storage."
+        )
+
+    buffer_zip.seek(0)
+    logger.info("ZIP gerado para funcionário=%s com %s arquivo(s)", funcionario, arquivos_adicionados)
+
+    return buffer_zip
