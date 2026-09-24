@@ -1,5 +1,5 @@
 from fastapi import APIRouter, status, UploadFile, File, Form
-from app.models.documento import Documento, TipoDocumentoEnum
+from app.models.documento import Documento, TipoDocumentoEnum, DocumentoAtualizacao
 from fastapi.responses import FileResponse, StreamingResponse
 from urllib.parse import quote
 from app.services.servico import (
@@ -8,6 +8,7 @@ from app.services.servico import (
     criar_documento_servico,
     obter_caminho_arquivo,
     gerar_zip_funcionario,
+    atualizar_documento_servico,
 )
 
 router = APIRouter(prefix="/documentos", tags=["Documentos"])
@@ -62,3 +63,7 @@ def download_zip_funcionario(funcionario: str):
         media_type="application/zip",
         headers={"Content-Disposition": f"attachment; filename*=UTF-8''{nome_arquivo}"}
     )
+
+@router.put("/{documento_id}", response_model=Documento)
+def atualizar_documento(documento_id: int, dados_atualizacao: DocumentoAtualizacao):
+    return atualizar_documento_servico(documento_id, dados_atualizacao)

@@ -7,7 +7,7 @@ from datetime import datetime, timezone
 from fastapi import HTTPException, status, UploadFile
 from app.config import settings
 from app.core.logging_config import logger
-from app.models.documento import Documento, TipoDocumentoEnum
+from app.models.documento import Documento, TipoDocumentoEnum, DocumentoAtualizacao
 
 DIRETORIO_METADADOS = Path(settings["storage"]["diretorio_metadata"])
 ARQUIVO_METADADOS = DIRETORIO_METADADOS / "documentos.json"
@@ -61,7 +61,6 @@ async def criar_documento_servico(
 ) -> dict:
     _garantir_diretorios()
 
-    #Validar tamanho do arquivo
     conteudo = await arquivo.read()
     tamanho_bytes = len(conteudo)
     if tamanho_bytes > TAMANHO_MAXIMO_MB * 1024 * 1024:
@@ -73,16 +72,12 @@ async def criar_documento_servico(
 
     documentos = ler_metadados()
 
-    #Gerar identificador único
     novo_id = max([doc.get("id", 0) for doc in documentos], default=0) + 1
 
-    #Preservar nome original e definir nome de armazenamento
     nome_original = arquivo.filename or "arquivo_sem_nome"
-    #Evita sobrescrita usando o ID + nome original
     nome_armazenado = f"{novo_id}_{nome_original}"
     caminho_fisico = DIRETORIO_DOCUMENTOS / nome_armazenado
 
-    #Armazenar fisicamente o arquivo
     try:
         with open(caminho_fisico, "wb") as buffer:
             buffer.write(conteudo)
@@ -93,16 +88,12 @@ async def criar_documento_servico(
             detail="Erro ao armazenar o arquivo fisicamente."
         )
 
-    #Identificar extensão
     extensao = Path(nome_original).suffix.replace(".", "").lower()
 
-    #Identificar tipo MIME
     tipo_mime = arquivo.content_type or "application/octet-stream"
 
-    #Calcular hash SHA-256
     sha256_hash = hashlib.sha256(conteudo).hexdigest()
 
-    #Registrar metadados no JSON
     novo_documento = Documento(
         id=novo_id,
         nome_original=nome_original,
@@ -185,3 +176,31 @@ def gerar_zip_funcionario(funcionario: str) -> io.BytesIO:
     logger.info("ZIP gerado para funcionário=%s com %s arquivo(s)", funcionario, arquivos_adicionados)
 
     return buffer_zip
+
+def atualizar_documento_servico(identificador: int, dados_atualizacao: DocumentoAtualizacao) -> dict:
+    documentos = ler_metadados()
+    
+    indice_encontrado = None
+    for indice, documento in enumerate(documentos):
+        if documento.get("id") == identificador:
+            indice_encontrado = indice
+            break
+
+    if indice_encontrado is None:
+        logger.warning("Tentativa de atualizar documento inexistente: %s", identificador)
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, 
+            detail="Documento não encontrado"
+        )
+
+    documento_atual = documentos[indice_encontrado]
+    dados_novos = dados_atualizacao.model_dump(exclude_unset=True, mode="json")
+
+    for campo, valor in dados_novos.items():
+        documento_atual[campo] = valor
+
+    salvar_metadados(documentos)
+
+    logger.info("Documento atualizado: id=%s, campos=%s", identificador, list(dados_novos.keys()))
+
+    return documento_atual
