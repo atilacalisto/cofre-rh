@@ -7,7 +7,7 @@ from datetime import datetime, timezone
 from fastapi import HTTPException, status, UploadFile
 from app.config import settings
 from app.core.logging_config import logger
-from app.models.documento import Documento, TipoDocumentoEnum, DocumentoAtualizacao
+from app.models.models import Documento, TipoDocumentoEnum, DocumentoAtualizacao
 
 DIRETORIO_METADADOS = Path(settings["storage"]["diretorio_metadata"])
 ARQUIVO_METADADOS = DIRETORIO_METADADOS / "documentos.json"

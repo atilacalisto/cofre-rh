@@ -1,5 +1,5 @@
 from fastapi import APIRouter, status, UploadFile, File, Form
-from app.models.documento import Documento, TipoDocumentoEnum, DocumentoAtualizacao
+from app.models.models import Documento, TipoDocumentoEnum, DocumentoAtualizacao
 from fastapi.responses import FileResponse, StreamingResponse
 from urllib.parse import quote
 from app.services.servico import (
