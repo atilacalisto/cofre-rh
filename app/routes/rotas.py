@@ -3,12 +3,14 @@ from app.models.models import Documento, TipoDocumentoEnum, DocumentoAtualizacao
 from fastapi.responses import FileResponse, StreamingResponse
 from urllib.parse import quote
 from app.services.servico import (
+    deletar_documento_servico,
     listar_documentos_servico,
     buscar_documento_por_id as buscar_documento_por_id_servico,
     criar_documento_servico,
     obter_caminho_arquivo,
     gerar_zip_funcionario,
     atualizar_documento_servico,
+    deletar_documento_servico,
 )
 
 router = APIRouter(prefix="/documentos", tags=["Documentos"])
@@ -67,3 +69,7 @@ def download_zip_funcionario(funcionario: str):
 @router.put("/{documento_id}", response_model=Documento)
 def atualizar_documento(documento_id: int, dados_atualizacao: DocumentoAtualizacao):
     return atualizar_documento_servico(documento_id, dados_atualizacao)
+
+@router.delete("/{documento_id}", status_code=status.HTTP_204_NO_CONTENT)
+def deletar_documento(documento_id: int):
+    return deletar_documento_servico(documento_id)

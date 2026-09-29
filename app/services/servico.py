@@ -204,3 +204,43 @@ def atualizar_documento_servico(identificador: int, dados_atualizacao: Documento
     logger.info("Documento atualizado: id=%s, campos=%s", identificador, list(dados_novos.keys()))
 
     return documento_atual
+
+def deletar_documento_servico(identificador: int) -> dict:
+    documentos = ler_metadados()
+
+    indice_encontrado = None
+
+    for indice, documento in enumerate(documentos):
+        if documento.get("id") == identificador:
+            indice_encontrado = indice
+            documento_removido = documento
+            break
+
+    if indice_encontrado is None:
+        logger.warning("Tentativa de remover um documento inexistente: %s", identificador)
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, 
+            detail="Documento não encontrado"
+        )
+
+    documento_removido = documentos[indice_encontrado]
+
+    documentos.pop(indice_encontrado)
+    salvar_metadados(documentos)
+
+    nome_armazenado = documento_removido.get("nome_armazenado")
+    if nome_armazenado:
+        caminho_arquivo = DIRETORIO_DOCUMENTOS / nome_armazenado
+
+        if caminho_arquivo.exists():
+            try:
+                caminho_arquivo.unlink()
+                logger.info("Arquivo físico removido: %s", caminho_arquivo)
+            except Exception as erro:
+                logger.error("Erro ao remover arquivo físico: %s %s", caminho_arquivo, erro)
+        else:
+            logger.warning("Arquivo físico não encontrado para remoção: %s", caminho_arquivo)
+
+        logger.info("Documento removido: id: %s, nome original: %s", identificador, documento_removido.get("nome_original"))
+
+    return {"mensagem": "Documento removido com sucesso"}
