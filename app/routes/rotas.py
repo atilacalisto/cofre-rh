@@ -1,4 +1,4 @@
-from fastapi import APIRouter, status, UploadFile, File, Form
+from fastapi import APIRouter, status, UploadFile, File, Form, Query
 from app.models.models import Documento, TipoDocumentoEnum, DocumentoAtualizacao
 from fastapi.responses import FileResponse, StreamingResponse
 from urllib.parse import quote
@@ -17,7 +17,7 @@ router = APIRouter(prefix="/documentos", tags=["Documentos"])
 
 
 @router.post("", response_model=Documento, status_code=status.HTTP_201_CREATED)
-async def criar_documento(
+def criar_documento(
     arquivo: UploadFile = File(..., description="Arquivo a ser enviado"),
     funcionario: str = Form(...),
     setor: str = Form(...),
@@ -25,7 +25,7 @@ async def criar_documento(
     competencia_m_a: str = Form(...),
     descricao: str = Form(...)
 ):
-    return await criar_documento_servico(
+    return criar_documento_servico(
         arquivo=arquivo,
         funcionario=funcionario,
         setor=setor,
@@ -34,11 +34,23 @@ async def criar_documento(
         descricao=descricao
     )
 
-
 @router.get("", response_model=list[Documento])
-def listar_documentos():
-    return listar_documentos_servico()
-
+def listar_documentos(
+    funcionario: str | None = Query(None, description="Filtrar por nome do funcionário"),
+    setor: str | None = Query(None, description="Filtrar por setor"),
+    tipo_de_documento: TipoDocumentoEnum | None = Query(None, description="Filtrar por tipo de documento"),
+    competencia_m_a: str | None = Query(None, description="Filtrar por competência (Mês/Ano)"),
+    extensao: str | None = Query(None, description="Filtrar por extensão do arquivo"),
+    tipo_mime: str | None = Query(None, description="Filtrar por tipo MIME do arquivo"),
+):
+    return listar_documentos_servico(
+        funcionario=funcionario,
+        setor=setor,
+        tipo_de_documento=tipo_de_documento,
+        competencia_m_a=competencia_m_a,
+        extensao=extensao,
+        tipo_mime=tipo_mime
+    )
 
 @router.get("/{documento_id}", response_model=Documento)
 def buscar_documento_por_id(documento_id: int):
@@ -53,7 +65,6 @@ def download_arquivo(id: int):
         filename=info["nome_original"],
         media_type=info["tipo_mime"]
     )
-
 
 @router.get("/funcionario/{funcionario}/zip")
 def download_zip_funcionario(funcionario: str):

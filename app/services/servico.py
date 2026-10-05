@@ -38,8 +38,46 @@ def salvar_metadados(dados: list[dict]) -> None:
     logger.debug("Arquivo %s atualizado com %s registros.", ARQUIVO_METADADOS.name, len(dados))
 
 
-def listar_documentos_servico() -> list[dict]:
-    return ler_metadados()
+def listar_documentos_servico(
+        funcionario: str | None = None,
+        setor: str | None = None,
+        tipo_de_documento: TipoDocumentoEnum | None = None,
+        competencia_m_a: str | None = None,
+        extensao: str | None = None,
+        tipo_mime: str | None = None,
+    ) -> list[dict]:
+    documentos = ler_metadados()
+
+    filtros_ativos = any([
+        funcionario,
+        setor,
+        tipo_de_documento,
+        competencia_m_a,
+        extensao,
+        tipo_mime
+    ])
+    if not filtros_ativos:
+        logger.info("Listagem de documentos: %d registro(s)", len(documentos))
+
+    resultados = []
+    for doc in documentos:
+        if funcionario and funcionario.strip().casefold() not in doc.get("funcionario", "").strip().casefold():
+            continue
+        if setor and setor.strip().casefold() not in doc.get("setor", "").strip().casefold():
+            continue
+        if tipo_de_documento and tipo_de_documento.value != doc.get("tipo_de_documento"):
+            continue
+        if competencia_m_a and competencia_m_a.strip().casefold() not in doc.get("competencia_m_a", "").strip().casefold():
+            continue
+        if extensao and extensao.strip().casefold() != doc.get("extensao", "").strip().casefold():
+            continue
+        if tipo_mime and tipo_mime.strip(). casefold() != doc.get("tipo_mime", "").strip().casefold():
+            continue
+
+        resultados.append(doc)
+
+    logger.info("Listagem de documentos filtrada: %d registro(s) encontrado(s)", len(resultados))
+    return resultados
 
 
 def buscar_documento_por_id(identificador: int) -> dict:
@@ -51,7 +89,7 @@ def buscar_documento_por_id(identificador: int) -> dict:
     raise HTTPException(status_code=404, detail="Documento não encontrado")
 
 
-async def criar_documento_servico(
+def criar_documento_servico(
     arquivo: UploadFile,
     funcionario: str,
     setor: str,
@@ -61,7 +99,7 @@ async def criar_documento_servico(
 ) -> dict:
     _garantir_diretorios()
 
-    conteudo = await arquivo.read()
+    conteudo = arquivo.file.read()
     tamanho_bytes = len(conteudo)
     if tamanho_bytes > TAMANHO_MAXIMO_MB * 1024 * 1024:
         logger.warning("Tentativa de upload excedendo o limite: %s MB", TAMANHO_MAXIMO_MB)
