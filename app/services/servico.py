@@ -2,6 +2,7 @@ import json
 import hashlib
 import zipfile 
 import io
+import csv
 from pathlib import Path
 from datetime import datetime, timezone
 from fastapi import HTTPException, status, UploadFile
@@ -340,3 +341,20 @@ def obter_estatisticas_servico() -> dict:
         "documentos_por_setor": por_setor,
         "documentos_por_tipo": por_tipo
     }
+
+def exportar_csv_servico() -> io.StringIO:
+    documentos = ler_metadados()
+    saida = io.StringIO()
+    
+    if not documentos:
+        return saida
+        
+    cabecalhos = documentos[0].keys()
+    escritor = csv.DictWriter(saida, fieldnames=cabecalhos, delimiter=';')
+    escritor.writeheader()
+    
+    for doc in documentos:
+        escritor.writerow(doc)
+        
+    saida.seek(0)
+    return saida

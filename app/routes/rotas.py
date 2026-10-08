@@ -13,6 +13,7 @@ from app.services.servico import (
     deletar_documento_servico,
     verificar_integridade_servico,
     obter_estatisticas_servico,
+    exportar_csv_servico,
 )
 
 router = APIRouter(prefix="/documentos", tags=["Documentos"])
@@ -58,6 +59,17 @@ def listar_documentos(
 def obter_estatisticas():
    
     return obter_estatisticas_servico()
+
+@router.get("/relatorios/exportar-csv")
+def exportar_csv():
+   
+    ficheiro_csv = exportar_csv_servico()
+    
+    return StreamingResponse(
+        ficheiro_csv,
+        media_type="text/csv",
+        headers={"Content-Disposition": "attachment; filename=documentos_rh.csv"}
+    )
 
 @router.get("/{id}/integridade")
 def verificar_integridade(id: int):
