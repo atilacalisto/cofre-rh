@@ -282,3 +282,38 @@ def deletar_documento_servico(identificador: int) -> dict:
         logger.info("Documento removido: id: %s, nome original: %s", identificador, documento_removido.get("nome_original"))
 
     return {"mensagem": "Documento removido com sucesso"}
+
+def verificar_integridade_servico(identificador: int) -> dict:
+    # 1. Busca os metadados do documento (reaproveitando a função existente)
+    documento = buscar_documento_por_id(identificador)
+    
+    # 2. Monta o caminho físico onde o arquivo deveria estar salvo
+    caminho_fisico = DIRETORIO_DOCUMENTOS / documento["nome_armazenado"]
+    
+    # Validação de segurança: verifica se o arquivo ainda existe no disco
+    if not caminho_fisico.exists():
+        logger.error("Falha na integridade: Arquivo físico %s ausente.", documento["nome_armazenado"])
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="O arquivo físico não foi encontrado no armazenamento."
+        )
+        
+    # 3. Lê o conteúdo atual do arquivo em modo binário ("rb") e calcula o novo hash
+    with open(caminho_fisico, "rb") as buffer:
+        conteudo = buffer.read()
+        
+    hash_calculado = hashlib.sha256(conteudo).hexdigest()
+    hash_esperado = documento.get("sha256")
+    
+    # 4. Compara e retorna o resultado
+    integro = hash_calculado == hash_esperado
+    
+    if not integro:
+        logger.warning("Alerta de integridade: O hash do documento ID %s não confere.", identificador)
+        
+    return {
+        "id": identificador,
+        "integro": integro,
+        "hash_esperado": hash_esperado,
+        "hash_calculado": hash_calculado
+    }

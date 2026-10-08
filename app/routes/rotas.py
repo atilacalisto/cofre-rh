@@ -11,6 +11,7 @@ from app.services.servico import (
     gerar_zip_funcionario,
     atualizar_documento_servico,
     deletar_documento_servico,
+    verificar_integridade_servico,
 )
 
 router = APIRouter(prefix="/documentos", tags=["Documentos"])
@@ -52,6 +53,11 @@ def listar_documentos(
         tipo_mime=tipo_mime
     )
 
+@router.get("/{id}/integridade")
+def verificar_integridade(id: int):
+   
+    return verificar_integridade_servico(id)
+
 @router.get("/{documento_id}", response_model=Documento)
 def buscar_documento_por_id(documento_id: int):
     return buscar_documento_por_id_servico(documento_id)
@@ -84,3 +90,5 @@ def atualizar_documento(documento_id: int, dados_atualizacao: DocumentoAtualizac
 @router.delete("/{documento_id}", status_code=status.HTTP_204_NO_CONTENT)
 def deletar_documento(documento_id: int):
     return deletar_documento_servico(documento_id)
+
+
