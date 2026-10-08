@@ -12,6 +12,7 @@ from app.services.servico import (
     atualizar_documento_servico,
     deletar_documento_servico,
     verificar_integridade_servico,
+    obter_estatisticas_servico,
 )
 
 router = APIRouter(prefix="/documentos", tags=["Documentos"])
@@ -52,6 +53,11 @@ def listar_documentos(
         extensao=extensao,
         tipo_mime=tipo_mime
     )
+
+@router.get("/relatorios/estatisticas")
+def obter_estatisticas():
+   
+    return obter_estatisticas_servico()
 
 @router.get("/{id}/integridade")
 def verificar_integridade(id: int):

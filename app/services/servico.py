@@ -284,13 +284,13 @@ def deletar_documento_servico(identificador: int) -> dict:
     return {"mensagem": "Documento removido com sucesso"}
 
 def verificar_integridade_servico(identificador: int) -> dict:
-    # 1. Busca os metadados do documento (reaproveitando a função existente)
+    
     documento = buscar_documento_por_id(identificador)
     
-    # 2. Monta o caminho físico onde o arquivo deveria estar salvo
+    
     caminho_fisico = DIRETORIO_DOCUMENTOS / documento["nome_armazenado"]
     
-    # Validação de segurança: verifica se o arquivo ainda existe no disco
+    
     if not caminho_fisico.exists():
         logger.error("Falha na integridade: Arquivo físico %s ausente.", documento["nome_armazenado"])
         raise HTTPException(
@@ -298,14 +298,14 @@ def verificar_integridade_servico(identificador: int) -> dict:
             detail="O arquivo físico não foi encontrado no armazenamento."
         )
         
-    # 3. Lê o conteúdo atual do arquivo em modo binário ("rb") e calcula o novo hash
+  
     with open(caminho_fisico, "rb") as buffer:
         conteudo = buffer.read()
         
     hash_calculado = hashlib.sha256(conteudo).hexdigest()
     hash_esperado = documento.get("sha256")
     
-    # 4. Compara e retorna o resultado
+    
     integro = hash_calculado == hash_esperado
     
     if not integro:
@@ -316,4 +316,27 @@ def verificar_integridade_servico(identificador: int) -> dict:
         "integro": integro,
         "hash_esperado": hash_esperado,
         "hash_calculado": hash_calculado
+    }
+
+def obter_estatisticas_servico() -> dict:
+    documentos = ler_metadados()
+    
+    total_documentos = len(documentos)
+    tamanho_total_bytes = sum(doc.get("tamanho", 0) for doc in documentos)
+    
+    por_setor = {}
+    por_tipo = {}
+    
+    for doc in documentos:
+        setor = doc.get("setor", "Desconhecido")
+        tipo = doc.get("tipo_de_documento", "Desconhecido")
+        
+        por_setor[setor] = por_setor.get(setor, 0) + 1
+        por_tipo[tipo] = por_tipo.get(tipo, 0) + 1
+        
+    return {
+        "total_documentos": total_documentos,
+        "tamanho_total_bytes": tamanho_total_bytes,
+        "documentos_por_setor": por_setor,
+        "documentos_por_tipo": por_tipo
     }
