@@ -3,6 +3,7 @@ import hashlib
 import zipfile 
 import io
 import csv
+import os
 from pathlib import Path
 from datetime import datetime, timezone
 from fastapi import HTTPException, status, UploadFile
@@ -14,6 +15,7 @@ DIRETORIO_METADADOS = Path(settings["storage"]["diretorio_metadata"])
 ARQUIVO_METADADOS = DIRETORIO_METADADOS / "documentos.json"
 DIRETORIO_DOCUMENTOS = Path(settings["storage"]["diretorio_documentos"])
 TAMANHO_MAXIMO_MB = settings["upload"]["tamanho_maximo_mb"]
+DIRETORIO_BACKUPS = Path(settings["storage"]["diretorio_backups"])
 
 def _garantir_diretorios() -> None:
     DIRETORIO_METADADOS.mkdir(parents=True, exist_ok=True)
@@ -358,3 +360,45 @@ def exportar_csv_servico() -> io.StringIO:
         
     saida.seek(0)
     return saida
+
+
+def criar_backup_servico() -> dict:
+    DIRETORIO_BACKUPS.mkdir(parents=True, exist_ok=True)
+    
+    data_atual = datetime.now()
+    nome_ficheiro = f"backup_{data_atual.strftime('%Y%m%d_%H%M%S')}.zip"
+    caminho_zip = DIRETORIO_BACKUPS / nome_ficheiro
+    
+    with zipfile.ZipFile(caminho_zip, 'w', zipfile.ZIP_DEFLATED) as zipf:
+        if ARQUIVO_METADADOS.exists():
+            zipf.write(ARQUIVO_METADADOS, arcname=f"metadata/{ARQUIVO_METADADOS.name}")
+            
+        if DIRETORIO_DOCUMENTOS.exists():
+            for root, _, files in os.walk(DIRETORIO_DOCUMENTOS):
+                for file in files:
+                    file_path = Path(root) / file
+                    if file != ".gitkeep":
+                        zipf.write(file_path, arcname=f"documentos/{file_path.name}")
+                        
+    logger.info("Backup criado com sucesso: %s", nome_ficheiro)
+    
+    return {
+        "mensagem": "Backup concluído",
+        "ficheiro": nome_ficheiro,
+        "tamanho_bytes": caminho_zip.stat().st_size,
+        "data": data_atual.isoformat()
+    }
+
+def listar_backups_servico() -> list[dict]:
+    DIRETORIO_BACKUPS.mkdir(parents=True, exist_ok=True)
+    
+    backups = []
+    for arquivo in DIRETORIO_BACKUPS.glob("*.zip"):
+        backups.append({
+            "ficheiro": arquivo.name,
+            "tamanho_bytes": arquivo.stat().st_size,
+            "data_criacao": datetime.fromtimestamp(arquivo.stat().st_ctime).isoformat()
+        })
+        
+    backups.sort(key=lambda x: x["data_criacao"], reverse=True)
+    return backups

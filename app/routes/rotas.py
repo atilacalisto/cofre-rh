@@ -14,6 +14,8 @@ from app.services.servico import (
     verificar_integridade_servico,
     obter_estatisticas_servico,
     exportar_csv_servico,
+    criar_backup_servico,
+    listar_backups_servico,
 )
 
 router = APIRouter(prefix="/documentos", tags=["Documentos"])
@@ -70,6 +72,16 @@ def exportar_csv():
         media_type="text/csv",
         headers={"Content-Disposition": "attachment; filename=documentos_rh.csv"}
     )
+
+@router.post("/backups", status_code=status.HTTP_201_CREATED)
+def criar_backup():
+   
+    return criar_backup_servico()
+
+@router.get("/backups")
+def listar_backups():
+    
+    return listar_backups_servico()
 
 @router.get("/{id}/integridade")
 def verificar_integridade(id: int):
